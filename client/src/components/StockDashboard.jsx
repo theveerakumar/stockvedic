@@ -3,7 +3,7 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Bar, ComposedChart, Area, Cell, ReferenceLine,
 } from 'recharts'
 
-const API = ''
+const API = import.meta.env.VITE_API_URL || ''
 const FH = 'https://finnhub.io/api/v1'
 const FH_KEY = import.meta.env.VITE_FINNHUB_KEY
 
