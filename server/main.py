@@ -518,6 +518,254 @@ def _yf_fundamentals(symbol: str):
     }
 
 
+def _screener_fundamentals(symbol: str):
+    sym = symbol.upper()
+
+    try:
+        from screener_cli.scraper import fetch_page_with_fallback
+        from screener_cli.parsers import (
+            quarterly,
+            balance_sheet,
+            cash_flow,
+            profit_loss,
+            shareholding,
+            pros_cons,
+        )
+    except ImportError:
+        return _yf_fundamentals(symbol)
+
+    def _cr(v):
+        return "\u2014" if v is None else f"{v:.2f} Cr"
+
+    def _pct(v):
+        return "\u2014" if v is None else f"{v:.1f}%"
+
+    def _val(v):
+        return "\u2014" if v is None else str(v)
+
+    def _find_row(rows, label):
+        for r in rows:
+            if r.label == label:
+                return list(r.values)
+        return None
+
+    def _find_row_val(rows, label):
+        vals = _find_row(rows, label)
+        return vals[0] if vals and len(vals) > 0 else None
+
+    try:
+        soup, view = fetch_page_with_fallback(sym, view="consolidated")
+    except Exception:
+        return _yf_fundamentals(symbol)
+
+    q_data = quarterly.parse(soup)
+    pl_dict = profit_loss.parse(soup)
+    pl_data = pl_dict.get("table") if isinstance(pl_dict, dict) else pl_dict
+    bs_data = balance_sheet.parse(soup)
+    cf_data = cash_flow.parse(soup)
+    sh_data = shareholding.parse(soup)
+    pc_data = pros_cons.parse(soup)
+
+    # Company name
+    h1 = soup.find("h1")
+    company_name = h1.text.strip() if h1 else sym
+
+    # ----- Top Ratios -----
+    top_ratios = {}
+    km = pc_data.key_metrics if pc_data and hasattr(pc_data, "key_metrics") else {}
+    for fk in [
+        "Stock P/E",
+        "ROCE",
+        "ROE",
+        "Book Value",
+        "Market Cap",
+        "Dividend Yield",
+        "High / Low",
+    ]:
+        if fk in km:
+            top_ratios[fk] = km[fk]
+
+    # ----- Quarterly Results -----
+    qr = []
+    if q_data and q_data.headers:
+        headers = list(q_data.headers)
+        qr.append(["Category"] + headers)
+
+        def add_qr_row(label_override, screener_label, fmt=_cr):
+            vals = _find_row(q_data.rows, screener_label)
+            if vals:
+                qr.append(
+                    [label_override]
+                    + [fmt(v) if v is not None else "\u2014" for v in vals]
+                )
+
+        add_qr_row("Sales", "Sales")
+        add_qr_row("Expenses", "Expenses")
+        add_qr_row("Operating Profit", "Operating Profit")
+        add_qr_row("OPM %", "OPM %", _pct)
+        add_qr_row("Other Income", "Other Income")
+        add_qr_row("Interest", "Interest")
+        add_qr_row("PBT", "Profit before tax")
+        add_qr_row("Tax %", "Tax %", _pct)
+        add_qr_row("Net Profit", "Net Profit")
+        add_qr_row("EPS", "EPS in Rs", _val)
+
+    # ----- P&L (Annual) -----
+    pl = []
+    if pl_data and pl_data.headers:
+        headers = list(pl_data.headers)
+        pl.append(["Category"] + headers)
+
+        def add_pl_row(label_override, screener_label, fmt=_cr):
+            vals = _find_row(pl_data.rows, screener_label)
+            if vals:
+                pl.append(
+                    [label_override]
+                    + [fmt(v) if v is not None else "\u2014" for v in vals]
+                )
+
+        add_pl_row("Total Revenue", "Sales")
+        add_pl_row("EBIT", "Operating Profit")
+        add_pl_row("Interest", "Interest")
+        add_pl_row("Depreciation", "Depreciation")
+        add_pl_row("PBT", "Profit before tax")
+
+        # Tax (absolute from PBT * Tax%)
+        pbt_vals = _find_row(pl_data.rows, "Profit before tax")
+        tax_pct_vals = _find_row(pl_data.rows, "Tax %")
+        if pbt_vals and tax_pct_vals:
+            n = min(len(pbt_vals), len(tax_pct_vals))
+            vals = [
+                pbt_vals[i] * tax_pct_vals[i] / 100
+                if pbt_vals[i] is not None and tax_pct_vals[i] is not None
+                else None
+                for i in range(n)
+            ]
+            pl.append(["Tax"] + [_cr(v) if v is not None else "\u2014" for v in vals])
+
+        add_pl_row("Net Profit", "Net Profit")
+        add_pl_row("EPS", "EPS in Rs", _val)
+
+        # EBITDA = EBIT + Depreciation
+        op_vals = _find_row(pl_data.rows, "Operating Profit")
+        depr_vals = _find_row(pl_data.rows, "Depreciation")
+        if op_vals and depr_vals:
+            n = min(len(op_vals), len(depr_vals))
+            vals = [
+                op_vals[i] + depr_vals[i]
+                if op_vals[i] is not None and depr_vals[i] is not None
+                else None
+                for i in range(n)
+            ]
+            ebitda_row = ["EBITDA"] + [
+                _cr(v) if v is not None else "\u2014" for v in vals
+            ]
+            pl.insert(3, ebitda_row)
+
+    # ----- Balance Sheet -----
+    bsr = []
+    if bs_data and bs_data.headers:
+        headers = list(bs_data.headers)
+        bsr.append(["Category"] + headers)
+
+        eq_cap_vals = _find_row(bs_data.rows, "Equity Capital")
+        reserves_vals = _find_row(bs_data.rows, "Reserves")
+        borrowings_vals = _find_row(bs_data.rows, "Borrowings")
+        total_assets_vals = _find_row(bs_data.rows, "Total Assets")
+
+        if eq_cap_vals and reserves_vals:
+            n = min(len(eq_cap_vals), len(reserves_vals))
+            vals = [
+                eq_cap_vals[i] + reserves_vals[i]
+                if eq_cap_vals[i] is not None and reserves_vals[i] is not None
+                else None
+                for i in range(n)
+            ]
+            bsr.append(
+                ["Shareholders Equity"]
+                + [_cr(v) if v is not None else "\u2014" for v in vals]
+            )
+
+        if total_assets_vals:
+            bsr.append(
+                ["Total Assets"]
+                + [_cr(v) if v is not None else "\u2014" for v in total_assets_vals]
+            )
+
+        if borrowings_vals:
+            bsr.append(
+                ["Total Debt"]
+                + [_cr(v) if v is not None else "\u2014" for v in borrowings_vals]
+            )
+
+    # ----- Cash Flow -----
+    cfr = []
+    if cf_data and cf_data.headers:
+        headers = list(cf_data.headers)
+        cfr.append(["Category"] + headers)
+
+        for fname, sname in [
+            ("Operating Cash Flow", "Cash from Operating Activity"),
+            ("Investing Cash Flow", "Cash from Investing Activity"),
+            ("Financing Cash Flow", "Cash from Financing Activity"),
+            ("Free Cash Flow", "Free Cash Flow"),
+        ]:
+            vals = _find_row(cf_data.rows, sname)
+            if vals:
+                cfr.append(
+                    [fname] + [_cr(v) if v is not None else "\u2014" for v in vals]
+                )
+
+    # ----- Shareholding -----
+    shq = []
+    if sh_data and sh_data.latest:
+        promoters = sh_data.latest.get("Promoters", 0)
+        fiis = sh_data.latest.get("FIIs", 0)
+        diis = sh_data.latest.get("DIIs", 0)
+        govt = sh_data.latest.get("Government", 0)
+        public = sh_data.latest.get("Public", 0)
+        institutions = fiis + diis + govt
+        shq = [
+            ["Category", "Latest"],
+            ["Promoters", f"{promoters:.1f}%"],
+            ["Institutions", f"{institutions:.1f}%"],
+            ["Public / Others", f"{public:.1f}%"],
+        ]
+
+    # ----- Ratios (red flags) -----
+    ratio_rows = []
+    if bs_data:
+        borrowings = _find_row_val(bs_data.rows, "Borrowings")
+        eq_cap = _find_row_val(bs_data.rows, "Equity Capital")
+        reserves = _find_row_val(bs_data.rows, "Reserves")
+        if (
+            borrowings is not None
+            and eq_cap is not None
+            and reserves is not None
+            and (eq_cap + reserves) > 0
+        ):
+            d2e = borrowings / (eq_cap + reserves)
+            ratio_rows.append(["Debt / Equity", f"{d2e:.2f}"])
+
+    about = pc_data.about if pc_data and pc_data.about else ""
+
+    return {
+        "success": "true",
+        "trading_symbol": sym,
+        "company": company_name,
+        "data": {
+            "top_ratios": top_ratios,
+            "quaterly_results": qr,
+            "profit_and_loss": pl,
+            "balance_sheet": bsr,
+            "cash_flows": cfr,
+            "shareholding_quarterly": shq,
+            "ratios": ratio_rows,
+            "about": about,
+        },
+    }
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     yield
@@ -618,7 +866,7 @@ async def yf_fundamentals(symbol: str):
     if cached:
         return cached
     try:
-        data = await asyncio.to_thread(_yf_fundamentals, symbol.upper())
+        data = await asyncio.to_thread(_screener_fundamentals, symbol.upper())
         if data.get("success") == "true":
             cache_set(cache_key, data, 43200)
             return data
