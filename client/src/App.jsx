@@ -2,6 +2,7 @@ import { useState } from 'react'
 import StockDashboard from './components/StockDashboard'
 import './App.css'
 
+// StockVedic - Indian Stock Analysis Tool
 export default function App() {
   const [theme, setTheme] = useState('dark')
 
