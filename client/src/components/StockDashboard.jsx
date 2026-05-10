@@ -643,29 +643,25 @@ export default function StockDashboard() {
                   {data && (
                     <div style={{ marginTop: '0.4rem', padding: '0.35rem 0.5rem', background: 'var(--surface1)', borderRadius: 4, fontSize: '0.6rem', color: 'var(--text2)', borderLeft: `3px solid ${data.regime === 'trend-up' ? 'var(--green)' : data.regime === 'trend-down' ? 'var(--red)' : 'var(--amber)'}` }}>
                       <span style={{ color: 'var(--accent)', fontWeight: 600 }}>🎯 Tactical Entry Guidance: </span>
-                      {data.regime === 'trend-up' && data.rsi < 50 && data.sma20 > data.sma50 && (
-                        <>Optimal pullback entry — price near SMA20 support, RSI normalizing. Enter on bounce from {fmt(data.sma20)}.</>
-                      )}
-                      {data.regime === 'trend-up' && data.rsi >= 50 && data.price > data.sma50 && (
-                        <>Momentum entry — price above SMA50, RSI in strength zone. Trail SL at {fmt(data.sma20)}.</>
-                      )}
-                      {data.regime === 'trend-up' && data.rsi > 65 && (
-                        <>Caution — RSI overbought, wait for pullback. Look for entry at {fmt(data.sma20)} or {fmt(data.s1)}.</>
-                      )}
-                      {data.regime === 'trend-down' && data.rsi > 50 && data.sma20 < data.sma50 && (
-                        <>Optimal short entry — price near SMA20 resistance, RSI normalizing. Enter on rejection from {fmt(data.sma20)}.</>
-                      )}
-                      {data.regime === 'trend-down' && data.rsi < 35 && (
-                        <>Caution — RSI oversold, avoid shorts. Wait for recovery above {fmt(data.sma50)}.</>
-                      )}
-                      {data.regime === 'ranging' && data.rsi < 35 && data.price < data.pivot && (
-                        <>Range long entry — near support {fmt(data.s1)}, RSI oversold. Target pivot {fmt(data.pivot)}.</>
-                      )}
-                      {data.regime === 'ranging' && data.rsi > 65 && data.price > data.pivot && (
-                        <>Range short entry — near resistance {fmt(data.r1)}, RSI overbought. Target pivot {fmt(data.pivot)}.</>
-                      )}
-                      {data.regime === 'ranging' && (data.rsi < 65 && data.rsi > 35) && (
-                        <>No clear edge — wait for RSI extreme or price at {fmt(data.s1)}/{fmt(data.r1)}.</>
+                      {data.regime === 'trend-up' ? (
+                        data.rsi > 65 ? <>Caution — RSI overbought, wait for pullback. Look for entry at {fmt(data.sma20)} or {fmt(data.s1)}.</>
+                        : data.rsi >= 50 && data.price > data.sma50 ? <>Momentum entry — price above SMA50, RSI in strength zone. Trail SL at {fmt(data.sma20)}.</>
+                        : data.rsi >= 50 && data.price <= data.sma50 ? <>Price below SMA50 despite uptrend — wait for breakout above {fmt(data.sma50)}.</>
+                        : data.rsi < 50 && data.sma20 > data.sma50 ? <>Optimal pullback entry — price near SMA20 support, RSI normalizing. Enter on bounce from {fmt(data.sma20)}.</>
+                        : <>Weak structure — SMA20 below SMA50 despite uptrend. Wait for golden cross confirmation.</>
+                      ) : data.regime === 'trend-down' ? (
+                        data.rsi < 35 ? <>Caution — RSI oversold, avoid shorts. Wait for recovery above {fmt(data.sma50)}.</>
+                        : data.rsi > 50 && data.sma20 < data.sma50 ? <>Optimal short entry — price near SMA20 resistance, RSI normalizing. Enter on rejection from {fmt(data.sma20)}.</>
+                        : data.rsi > 50 && data.sma20 >= data.sma50 ? <>SMA20 crossed above SMA50 — trend may be reversing. Avoid fresh shorts.</>
+                        : <>Bearish momentum fading, RSI neutral. Consider covering or wait for stronger signal.</>
+                      ) : data.regime === 'ranging' ? (
+                        data.rsi < 35 && data.price < data.pivot ? <>Range long entry — near support {fmt(data.s1)}, RSI oversold. Target pivot {fmt(data.pivot)}.</>
+                        : data.rsi < 35 && data.price >= data.pivot ? <>RSI oversold but price above pivot — wait for pullback to {fmt(data.s1)} for better entry.</>
+                        : data.rsi > 65 && data.price > data.pivot ? <>Range short entry — near resistance {fmt(data.r1)}, RSI overbought. Target pivot {fmt(data.pivot)}.</>
+                        : data.rsi > 65 && data.price <= data.pivot ? <>RSI overbought but price below pivot — wait for rally to {fmt(data.r1)} for better entry.</>
+                        : <>No clear edge — wait for RSI extreme or price at {fmt(data.s1)}/{fmt(data.r1)}.</>
+                      ) : (
+                        <>Awaiting data — check stock selection or refresh.</>
                       )}
                     </div>
                   )}
