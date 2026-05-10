@@ -155,7 +155,7 @@ function calcVolAvg(volumes) {
 async function fetchLazy(ticker, type) {
   if (!FH_KEY) return null
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 10000)
+  const timeout = setTimeout(() => controller.abort(), 30000)
   try {
     if (type === 'earnings') {
       const r = await fetch(`${FH}/stock/earnings?symbol=${ticker}.NS&token=${FH_KEY}`, { signal: controller.signal })
