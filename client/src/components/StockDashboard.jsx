@@ -300,8 +300,8 @@ export default function StockDashboard() {
     try {
       const [fundR, histR, quoteR] = await Promise.all([
         fetch(`${API}/api/yf/fundamentals/${sym}`).then(r => r.json()),
-        fetch(`${API}/api/yf/history/${sym}?period=${histPeriod}`).then(r => r.json()),
-        fetch(`${API}/api/yf/quote/${sym}`).then(r => r.json()),
+        fetch(`${API}/api/nse/history/${sym}?period=${histPeriod}`).then(r => r.json()),
+        fetch(`${API}/api/nse/quote/${sym}`).then(r => r.json()),
       ])
       if (fundR.success === 'true') setFundamentals(fundR)
       else setError(fundR.error || 'Failed to load fundamentals')

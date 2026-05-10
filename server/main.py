@@ -1,7 +1,10 @@
 import os
 import asyncio
-from datetime import date
+import re
+import requests
+from datetime import date, timedelta, datetime
 from contextlib import asynccontextmanager
+from dateutil.relativedelta import relativedelta
 
 import yfinance as yf
 import httpx
@@ -13,6 +16,26 @@ from fastapi.responses import JSONResponse
 from cache import get, set as cache_set, make_key
 
 load_dotenv()
+
+from nselib import capital_market
+
+# Brotli fix for nselib (Python 3.13 chunked decode issue)
+_original_urlfetch = None
+try:
+    import nselib.libutil as libutil
+
+    _original_urlfetch = libutil.nse_urlfetch
+
+    def _patched_nse_urlfetch(url, origin_url="http://nseindia.com"):
+        r_session = requests.Session()
+        r_session.headers["Accept-Encoding"] = "gzip, deflate"
+        nse_live = r_session.get(origin_url, headers=libutil.default_header)
+        cookies = nse_live.cookies
+        return r_session.get(url, headers=libutil.default_header, cookies=cookies)
+
+    libutil.nse_urlfetch = _patched_nse_urlfetch
+except Exception:
+    pass
 
 FINCRUX_KEY = os.getenv("FINCRUX_KEY")
 FINNHUB_KEY = os.getenv("FINNHUB_KEY")
@@ -64,6 +87,152 @@ def _yf_history(symbol: str, period: str = "1y"):
             }
         )
     return {"symbol": symbol.upper(), "values": values}
+
+
+def _parse_indian_num(val):
+    if val is None:
+        return None
+    s = str(val).strip()
+    if not s:
+        return None
+    try:
+        return float(s.replace(",", ""))
+    except:
+        return None
+
+
+def _find_latest_trading_date():
+    for i in range(10):
+        d = (date.today() - timedelta(days=i)).strftime("%d-%m-%Y")
+        try:
+            df = capital_market.price_volume_data("RELIANCE", period="1D")
+            if df is not None and not df.empty:
+                return d
+        except:
+            continue
+    return date.today().strftime("%d-%m-%Y")
+
+
+def _find_date_with_52wk_data():
+    for i in range(10):
+        d = (date.today() - timedelta(days=i)).strftime("%d-%m-%Y")
+        try:
+            df = capital_market.week_52_high_low_report(d)
+            if df is not None and not df.empty:
+                rel = df[df["SYMBOL"] == "RELIANCE"]
+                if not rel.empty:
+                    vh = rel.iloc[0].get("Adjusted_52_Week_High")
+                    if vh and str(vh) != "-":
+                        return d
+        except:
+            continue
+    return None
+
+
+def _nse_quote(symbol: str):
+    sym = symbol.upper()
+    trading_date = _find_latest_trading_date()
+    week52_date = _find_date_with_52wk_data() or trading_date
+
+    latest = None
+    try:
+        df = capital_market.price_volume_data(sym, period="1D")
+        if df is not None and not df.empty:
+            latest = df.iloc[0]
+    except Exception:
+        pass
+
+    price = None
+    prev_close = None
+    day_high = None
+    day_low = None
+    volume = None
+    if latest is not None:
+        price = _parse_indian_num(latest.get("ClosePrice"))
+        prev_close = _parse_indian_num(latest.get("PrevClose"))
+        day_high = _parse_indian_num(latest.get("HighPrice"))
+        day_low = _parse_indian_num(latest.get("LowPrice"))
+        volume = _parse_indian_num(latest.get("TotalTradedQuantity"))
+
+    change = None
+    change_pct = None
+    if price and prev_close:
+        change = round(price - prev_close, 2)
+        change_pct = round((change / prev_close) * 100, 2)
+
+    year_high = None
+    year_low = None
+    try:
+        df52 = capital_market.week_52_high_low_report(week52_date)
+        if df52 is not None and not df52.empty:
+            df52 = df52[df52["SYMBOL"] == sym]
+            if not df52.empty:
+                vh = df52.iloc[0].get("Adjusted_52_Week_High")
+                vl = df52.iloc[0].get("Adjusted_52_Week_Low")
+                year_high = _parse_indian_num(vh) if vh and str(vh) != "-" else None
+                year_low = _parse_indian_num(vl) if vl and str(vl) != "-" else None
+    except Exception:
+        pass
+
+    pe_ratio = None
+    try:
+        df_pe = capital_market.pe_ratio(trading_date)
+        if df_pe is not None and not df_pe.empty:
+            row = df_pe[df_pe["SYMBOL"] == sym]
+            if not row.empty:
+                pe_ratio = _parse_indian_num(row.iloc[0].get("SYMBOLP/E"))
+    except Exception:
+        pass
+
+    return {
+        "symbol": sym,
+        "price": round(price, 2) if price else None,
+        "change": change,
+        "changePercent": change_pct,
+        "dayHigh": day_high,
+        "dayLow": day_low,
+        "yearHigh": year_high,
+        "yearLow": year_low,
+        "volume": int(volume) if volume else None,
+        "peRatio": pe_ratio,
+    }
+
+
+def _nse_history(symbol: str, period: str = "1Y"):
+    sym = symbol.upper()
+    period_map = {"3mo": "3M", "1y": "1Y", "5y": "5Y"}
+    nse_period = period_map.get(period.lower(), "1Y")
+
+    try:
+        df = capital_market.price_volume_data(sym, period=nse_period)
+    except Exception:
+        return {"symbol": sym, "values": []}
+
+    if df is None or df.empty:
+        return {"symbol": sym, "values": []}
+
+    values = []
+    for _, row in df.iterrows():
+        dt = row.get("Date", "")
+        try:
+            dt_obj = datetime.strptime(dt, "%d-%b-%Y")
+            dt_str = dt_obj.strftime("%Y-%m-%d")
+        except:
+            dt_str = dt
+
+        values.append(
+            {
+                "datetime": dt_str,
+                "open": round(_parse_indian_num(row.get("OpenPrice")) or 0, 2),
+                "high": round(_parse_indian_num(row.get("HighPrice")) or 0, 2),
+                "low": round(_parse_indian_num(row.get("LowPrice")) or 0, 2),
+                "close": round(_parse_indian_num(row.get("ClosePrice")) or 0, 2),
+                "volume": int(_parse_indian_num(row.get("TotalTradedQuantity")) or 0),
+            }
+        )
+
+    values.reverse()
+    return {"symbol": sym, "values": values}
 
 
 def _yf_fundamentals(symbol: str):
@@ -363,8 +532,8 @@ async def root():
         "version": "1.0",
         "endpoints": [
             "/api/search",
-            "/api/yf/quote/{symbol}",
-            "/api/yf/history/{symbol}",
+            "/api/nse/quote/{symbol}",
+            "/api/nse/history/{symbol}",
             "/api/yf/fundamentals/{symbol}",
         ],
     }
@@ -403,16 +572,16 @@ async def search(q: str = Query(min_length=1)):
         )
 
 
-@app.get("/api/yf/quote/{symbol}")
-async def yf_quote(symbol: str):
-    cache_key = make_key("yf_quote", symbol.upper())
+@app.get("/api/nse/quote/{symbol}")
+async def nse_quote(symbol: str):
+    cache_key = make_key("nse_quote", symbol.upper())
     cached = get(cache_key)
     if cached:
         return cached
     try:
-        data = await asyncio.to_thread(_yf_quote, symbol.upper())
+        data = await asyncio.to_thread(_nse_quote, symbol.upper())
         if data.get("price"):
-            cache_set(cache_key, data, 30)
+            cache_set(cache_key, data, 60)
             return data
         return {"error": "Quote not found"}
     except Exception as e:
@@ -421,14 +590,14 @@ async def yf_quote(symbol: str):
         )
 
 
-@app.get("/api/yf/history/{symbol}")
-async def yf_history(symbol: str, period: str = "1y"):
-    cache_key = make_key("yf_history", symbol.upper(), period)
+@app.get("/api/nse/history/{symbol}")
+async def nse_history(symbol: str, period: str = "1y"):
+    cache_key = make_key("nse_history", symbol.upper(), period)
     cached = get(cache_key)
     if cached:
         return cached
     try:
-        data = await asyncio.to_thread(_yf_history, symbol.upper(), period)
+        data = await asyncio.to_thread(_nse_history, symbol.upper(), period)
         if data.get("values"):
             cache_set(cache_key, data, 3600)
             return data
