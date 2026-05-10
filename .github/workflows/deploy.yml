@@ -16,6 +16,9 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    env:
+      VITE_API_URL: ${{ secrets.VITE_API_URL }}
+      VITE_FINNHUB_KEY: ${{ secrets.VITE_FINNHUB_KEY }}
     defaults:
       run:
         working-directory: client
@@ -28,9 +31,6 @@ jobs:
           cache-dependency-path: client/package-lock.json
       - run: npm ci
       - run: npm run build
-        env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
-          VITE_FINNHUB_KEY: ${{ secrets.VITE_FINNHUB_KEY }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: client/dist
