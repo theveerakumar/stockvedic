@@ -200,11 +200,14 @@ def _nse_quote(symbol: str):
 
 def _nse_history(symbol: str, period: str = "1Y"):
     sym = symbol.upper()
-    period_map = {"3mo": "3M", "1y": "1Y", "5y": "5Y"}
-    nse_period = period_map.get(period.lower(), "1Y")
+    today = date.today()
+    period_days = {"3mo": 90, "1y": 365, "5y": 1825}
+    days = period_days.get(period.lower(), 365)
+    from_date = (today - timedelta(days=days)).strftime("%d-%m-%Y")
+    to_date = today.strftime("%d-%m-%Y")
 
     try:
-        df = capital_market.price_volume_data(sym, period=nse_period)
+        df = capital_market.price_volume_data(sym, from_date=from_date, to_date=to_date)
     except Exception:
         return {"symbol": sym, "values": []}
 
