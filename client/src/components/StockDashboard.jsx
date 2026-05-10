@@ -297,14 +297,15 @@ export default function StockDashboard() {
     setError(null)
     setData(null)
     setLazyData(null)
+    fetch(`${API}/api/yf/fundamentals/${sym}`)
+      .then(r => r.json())
+      .then(fr => { if (fr.success === 'true') setFundamentals(fr) })
+      .catch(() => {})
     try {
-      const [fundR, histR, quoteR] = await Promise.all([
-        fetch(`${API}/api/yf/fundamentals/${sym}`).then(r => r.json()),
+      const [histR, quoteR] = await Promise.all([
         fetch(`${API}/api/nse/history/${sym}?period=${histPeriod}`).then(r => r.json()),
         fetch(`${API}/api/nse/quote/${sym}`).then(r => r.json()),
       ])
-      if (fundR.success === 'true') setFundamentals(fundR)
-      else setError(fundR.error || 'Failed to load fundamentals')
 
       if (histR.values && histR.values.length > 0) {
         const daily = histR.values.map(v => ({
@@ -503,11 +504,11 @@ export default function StockDashboard() {
       {loading && <div className="loading-box"><div className="spinner" /><span>Loading {symbol}...</span></div>}
       {error && <div className="error-box">{error}</div>}
 
-      {!loading && fundamentals && (
+      {!loading && data && (
         <>
           <div className="stock-header">
-            <span className="stock-ticker">{fundamentals.trading_symbol}</span>
-            <span className="stock-company-name">{fundamentals.company}</span>
+            <span className="stock-ticker">{data.overview?.symbol || symbol}</span>
+            <span className="stock-company-name">{fundamentals?.company || symbol}</span>
             {data?.price > 0 && <span className="stock-price">₹{fmt(data.price)}</span>}
             {data?.change && <span className={`stock-change ${+data.change >= 0 ? 'pos' : 'neg'}`}>{+data.change >= 0 ? '▲' : '▼'} {Math.abs(data.change)}%</span>}
           </div>
