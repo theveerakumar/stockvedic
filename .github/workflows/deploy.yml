@@ -26,10 +26,11 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: client/package-lock.json
-      - run: echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> .env
-      - run: echo "VITE_FINNHUB_KEY=${{ secrets.VITE_FINNHUB_KEY }}" >> .env
       - run: npm ci
       - run: npm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_FINNHUB_KEY: ${{ secrets.VITE_FINNHUB_KEY }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: client/dist
