@@ -19,7 +19,7 @@ export default function App() {
         <StockDashboard />
       </main>
       <footer className="footer">
-        StockVedic &copy; {new Date().getFullYear()} &mdash; Data: Yahoo Finance, Finnhub
+        StockVedic &copy; {new Date().getFullYear()} &mdash; Data: NSE India, Finnhub
       </footer>
     </div>
   )
