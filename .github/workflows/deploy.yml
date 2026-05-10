@@ -30,7 +30,7 @@ jobs:
           cache: npm
           cache-dependency-path: client/package-lock.json
       - run: npm ci
-      - run: npm run build
+      - run: VITE_GIT_COMMIT=$(git rev-parse --short HEAD) npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
           path: client/dist

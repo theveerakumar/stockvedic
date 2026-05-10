@@ -912,3 +912,4 @@ body {
   color: var(--text2);
   font-size: 0.7rem;
 }
+.footer-rev { opacity: 0.5; font-family: var(--font-mono); font-size: 0.6rem; }

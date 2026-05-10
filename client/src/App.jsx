@@ -20,6 +20,7 @@ export default function App() {
       </main>
       <footer className="footer">
         StockVedic &copy; {new Date().getFullYear()} &mdash; Data: NSE India, Finnhub
+        <span className="footer-rev"> rev {import.meta.env.VITE_GIT_COMMIT || 'dev'}</span>
       </footer>
     </div>
   )
