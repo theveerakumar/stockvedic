@@ -1,4 +1,4 @@
-# StockVedic — Indian Stock Analysis Tool
+# stockvedic — Indian Stock Analysis Tool
 
 <p align="center">
   <img src="https://img.shields.io/badge/NSE-Stocks-blue" alt="NSE">
@@ -13,7 +13,7 @@
 
 | Component | URL |
 |-----------|-----|
-| **Frontend** | https://theveerakumar.github.io/StockVedic/ |
+| **Frontend** | https://theveerakumar.github.io/stockvedic/ |
 | **Backend API** | https://stockvedic.onrender.com |
 
 ---
@@ -112,8 +112,8 @@ stockVedic/
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/theveerakumar/StockVedic.git
-cd StockVedic
+git clone https://github.com/theveerakumar/stockvedic.git
+cd stockvedic
 ```
 
 ### Step 2: Start the Backend
@@ -201,7 +201,7 @@ Your backend URL will be something like: `https://stockvedic.onrender.com`
    - `VITE_FINNHUB_KEY` → your Finnhub API key
 5. Push to `master` — GitHub Actions will auto-deploy
 
-Your frontend URL: `https://theveerakumar.github.io/StockVedic/`
+Your frontend URL: `https://theveerakumar.github.io/stockvedic/`
 
 ---
 
