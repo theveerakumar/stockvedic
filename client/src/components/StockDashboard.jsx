@@ -407,7 +407,7 @@ export default function StockDashboard() {
       fetchLazy(sym, 'earnings'),
       fetchLazy(sym, 'recommendations'),
     ])
-    if (earningsD || recsD) setLazyData({ earnings: earningsD, recommendations: recsD })
+    setLazyData({ earnings: earningsD, recommendations: recsD, loaded: true })
   }, [])
 
   useEffect(() => {
@@ -869,7 +869,7 @@ export default function StockDashboard() {
                   </div>
                 </div>
               )}
-              {(lazyData?.recommendations || FH_KEY) && (
+              {(lazyData?.recommendations || (FH_KEY && !lazyData?.loaded)) && (
                 <div className="side-card">
                   <div className="side-card-title">Analyst Consensus</div>
                   {lazyData?.recommendations ? (
@@ -894,7 +894,7 @@ export default function StockDashboard() {
                     </>
                   ) : (
                     <div style={{ fontSize: '0.65rem', color: 'var(--text2)', padding: '0.5rem', textAlign: 'center' }}>
-                      {FH_KEY ? 'Loading consensus data...' : 'No analyst data available'}
+                      {lazyData?.loaded ? 'No analyst data available' : 'Loading consensus data...'}
                     </div>
                   )}
                 </div>
