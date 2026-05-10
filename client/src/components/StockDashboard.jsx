@@ -12,6 +12,32 @@ const POPULAR = ['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 'SBIN', 'BH
 const PERIOD_MAP = { '3m': '3mo', '1y': '1y', '5y': '5y' }
 const PERIOD_DAYS = { '3m': 63, '1y': 252, '5y': 1260 }
 
+const CACHE_TTL = { DATA: 3600000, FUND: 43200000 }
+
+function cacheGet(key) {
+  try {
+    const raw = localStorage.getItem(key)
+    if (!raw) return null
+    const { data, ttl } = JSON.parse(raw)
+    if (Date.now() > ttl) { localStorage.removeItem(key); return null }
+    return data
+  } catch { return null }
+}
+
+function cacheSet(key, data, ttl) {
+  try {
+    localStorage.setItem(key, JSON.stringify({ data, ttl: Date.now() + ttl }))
+  } catch {
+    try {
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i)
+        if (k.startsWith('sv_')) localStorage.removeItem(k)
+      }
+      localStorage.setItem(key, JSON.stringify({ data, ttl: Date.now() + ttl }))
+    } catch {}
+  }
+}
+
 function fmt(n) {
   if (n === null || n === undefined || n === '') return '—'
   const v = parseFloat(String(n).replace(/,/g, ''))
@@ -295,17 +321,44 @@ export default function StockDashboard() {
   const fetchPhase1 = useCallback(async (sym, histPeriod) => {
     setLoading(true)
     setError(null)
-    setData(null)
     setLazyData(null)
-    fetch(`${API}/api/yf/fundamentals/${sym}`)
-      .then(r => r.json())
-      .then(fr => { if (fr.success === 'true') setFundamentals(fr) })
-      .catch(() => {})
+
+    const cacheKey = `sv_${sym}_${histPeriod}`
+    const fundKey = `sv_fund_${sym}`
+    const cached = cacheGet(cacheKey)
+    if (cached) {
+      setData(cached)
+      setLoading(false)
+    } else {
+      setData(null)
+    }
+
+    const cachedFund = cacheGet(fundKey)
+    if (cachedFund) {
+      setFundamentals(cachedFund)
+    } else {
+      fetch(`${API}/api/yf/fundamentals/${sym}`)
+        .then(r => r.json())
+        .then(fr => {
+          if (fr.success === 'true') {
+            setFundamentals(fr)
+            cacheSet(fundKey, fr, CACHE_TTL.FUND)
+          }
+        })
+        .catch(() => {})
+    }
+
     try {
-      const [histR, quoteR] = await Promise.all([
-        fetch(`${API}/api/nse/history/${sym}?period=${histPeriod}`).then(r => r.json()),
-        fetch(`${API}/api/nse/quote/${sym}`).then(r => r.json()),
-      ])
+      const histP = fetch(`${API}/api/nse/history/${sym}?period=${histPeriod}`).then(r => r.json())
+      const quoteP = fetch(`${API}/api/nse/quote/${sym}`).then(r => r.json())
+
+      quoteP.then(quoteR => {
+        if (quoteR?.price) {
+          setData(prev => prev ? { ...prev, overview: quoteR, price: quoteR.price } : null)
+        }
+      }).catch(() => {})
+
+      const [histR, quoteR] = await Promise.all([histP, quoteP])
 
       if (histR.values && histR.values.length > 0) {
         const daily = histR.values.map(v => ({
@@ -380,7 +433,7 @@ export default function StockDashboard() {
 
         const posSize = Math.round(10000 / Math.max(risk, 0.01))
 
-        setData({
+        const freshData = {
           merged, price: lc, close: lc, change: merged.length > 1 ? ((lc / merged[merged.length - 2]?.close - 1) * 100).toFixed(2) : '0',
           rsi: lr, macd: lm, macdSignal: ls, macdHist: last?.macdHist || 0,
           adx: adxv, pdi: pdv, mdi: mdv, regime, trade: adxv >= 25 ? 'Trend trading: buy dips in direction' : 'Range trading: buy support, sell resistance',
@@ -394,7 +447,10 @@ export default function StockDashboard() {
           overview: quoteR,
           pivot, r1: 2 * pivot - pivotL, r2: pivot + diff, s1: 2 * pivot - pivotH, pivotS2: pivot - diff,
           fib236: pivotL + diff * 0.236, fib382: pivotL + diff * 0.382, fib500: pivotL + diff * 0.5, fib618: pivotL + diff * 0.618, fib786: pivotL + diff * 0.786,
-        })
+        }
+
+        cacheSet(cacheKey, freshData, CACHE_TTL.DATA)
+        setData(freshData)
       }
       setLoading(false)
     } catch (e) {
