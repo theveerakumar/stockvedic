@@ -22,21 +22,6 @@ FINCRUX_BASE = "https://api.fincrux.org/api"
 client = httpx.AsyncClient(timeout=15)
 
 
-@app.get("/")
-async def root():
-    return {
-        "status": "ok",
-        "app": "StockVedic API",
-        "version": "1.0",
-        "endpoints": [
-            "/api/search",
-            "/api/yf/quote/{symbol}",
-            "/api/yf/history/{symbol}",
-            "/api/yf/fundamentals/{symbol}",
-        ],
-    }
-
-
 def _yf_quote(symbol: str):
     t = yf.Ticker(symbol + ".NS")
     info = t.info
@@ -368,6 +353,22 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="StockVedic API", lifespan=lifespan)
+
+
+@app.get("/")
+async def root():
+    return {
+        "status": "ok",
+        "app": "StockVedic API",
+        "version": "1.0",
+        "endpoints": [
+            "/api/search",
+            "/api/yf/quote/{symbol}",
+            "/api/yf/history/{symbol}",
+            "/api/yf/fundamentals/{symbol}",
+        ],
+    }
+
 
 app.add_middleware(
     CORSMiddleware,
