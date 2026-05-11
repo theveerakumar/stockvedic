@@ -1,171 +1,80 @@
-# stockvedic — Indian Stock Analysis Tool
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://capsule-render.vercel.app/api?type=waving&height=200&color=0:0A0E17,100:F59E0B&text=StockVedic&desc=Indian%20Stock%20Analysis%20Tool%20%E2%80%94%20NSE%20Only&fontColor=ffffff&descAlignY=60&descSize=13" />
+  <source media="(prefers-color-scheme: light)" srcset="https://capsule-render.vercel.app/api?type=waving&height=200&color=0:0A0E17,100:F59E0B&text=StockVedic&desc=Indian%20Stock%20Analysis%20Tool%20%E2%80%94%20NSE%20Only&fontColor=ffffff&descAlignY=60&descSize=13" />
+  <img src="https://capsule-render.vercel.app/api?type=waving&height=200&color=0:0A0E17,100:F59E0B&text=StockVedic&desc=Indian%20Stock%20Analysis%20Tool%20%E2%80%94%20NSE%20Only&fontColor=ffffff&descAlignY=60&descSize=13" />
+</picture>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/NSE-Stocks-blue" alt="NSE">
-  <img src="https://img.shields.io/badge/React-Vite-purple" alt="React">
-  <img src="https://img.shields.io/badge/FastAPI-Python-green" alt="FastAPI">
-  <img src="https://img.shields.io/badge/License-MIT-orange" alt="License">
+  <img src="https://img.shields.io/badge/NSE-Stocks-0A0E17?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBkPSJNOCAxNkwxNiA4TTE2IDE2TDggOCIvPjwvc3ZnPg==&logoColor=white" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=white" />
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" />
+  <img src="https://img.shields.io/badge/Render-46E3B7?style=for-the-badge&logo=render&logoColor=white" />
+  <img src="https://img.shields.io/badge/License-MIT-F59E0B?style=for-the-badge&logo=license&logoColor=white" />
 </p>
 
-> Professional-grade technical analysis for Indian Stock Markets (NSE only)
+---
 
 ## Live App
 
-| Component | URL |
-|-----------|-----|
-| **Frontend** | https://theveerakumar.github.io/stockvedic/ |
+| | URL |
+|---|---|
+| **Frontend** | https://veerakumar.com/stockvedic/ |
 | **Backend API** | https://stockvedic.onrender.com |
 
 ---
 
 ## Features
 
-### 📊 Technical Analysis
+### Technical Analysis
 - **Price Charts** — Interactive candlestick-style line charts with SMA 20/50, Bollinger Bands, VWAP
 - **RSI (14)** — Momentum oscillator with overbought/oversold zones, divergence detection
-- **MACD (12,26,9)** — Trend following indicator with histogram, zero-line crossovers
+- **MACD (12,26,9)** — Trend following with histogram, zero-line crossovers
 - **ADX (14)** — Trend strength measurement with +DI/-DI
 - **ATR (14)** — Daily volatility for position sizing and stop loss
 - **VWAP** — Intraday fair value indicator
 
-### 🎯 Trading Signals
+### Trading Signals
 - **Pivot Points** — 63-day lookback (R1, R2, S1, S2)
 - **Fibonacci Retracements** — 23.6%, 38.2%, 50%, 61.8%, 78.6%
-- **Entry Zone** — Based on nearest support level
-- **Stop Loss** — Support minus 0.5× ATR
-- **Target** — Pivot R1
-- **Risk/Reward Ratio** — Calculated and displayed
-- **Position Sizing** — Risk ₹10,000 → calculated share count
+- **Tactical Entry Guidance** — Regime-aware entry advice
+- **Position Sizing** — Risk-based share count calculation
 
-### 📈 Market Context
+### Market Context
 - **Regime Detection** — Trend-up, Trend-down, or Ranging
 - **Market Sentiment Row** — Regime, SMAs, RSI, Volume summary
-- **Tactical Entry Guidance** — Context-aware entry advice based on regime, RSI, SMAs
 
-### 💼 Fundamentals
+### Fundamentals
 - **Quarterly Results** — Sales, Net Profit, EPS with YoY changes
 - **Annual P&L** — Revenue and profit trends
-- **Balance Sheet** — Key metrics
-- **Cash Flow** — Operating/Investing/Financing
+- **Balance Sheet & Cash Flow** — Key metrics
 - **Ratios** — P/E, ROCE, ROE, Book Value, Dividend Yield, Debt/Equity
 - **Shareholding** — Promoter, FII, DII breakdown
 
-### 📰 Market Data
+### Market Data
 - **Earnings Surprise** — Last 4 quarters (Finnhub)
 - **Analyst Consensus** — Buy/Hold/Sell recommendations (Finnhub)
-- **Company News** — Latest market news (Finnhub)
+- **Company News** — Latest headlines (Finnhub)
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| **Frontend** | React 19, Vite, Recharts |
-| **Styling** | CSS Variables (Dark/Light theme) |
-| **Backend** | FastAPI, Python 3 |
-| **Data Sources** | Yahoo Finance (yfinance), Finnhub, Fincrux |
-| **Deployment** | GitHub Pages + Render |
-
----
-
-## Project Structure
-
 ```
-stockVedic/
-├── client/                     # React frontend
-│   ├── src/
-│   │   ├── App.jsx            # Main app shell
-│   │   ├── App.css            # Styling (terminal aesthetic)
-│   │   ├── main.jsx           # React entry point
-│   │   └── components/
-│   │       └── StockDashboard.jsx  # Main dashboard component
-│   ├── index.html
-│   ├── package.json
-│   └── vite.config.js
-│
-├── server/                     # FastAPI backend
-│   ├── main.py               # API endpoints
-│   ├── cache.py              # SQLite caching layer
-│   ├── requirements.txt      # Python dependencies
-│   ├── .env.example          # Env variable template
-│   └── Procfile              # Render deployment config
-│
-├── .github/
-│   └── workflows/
-│       └── deploy.yml        # GitHub Pages deployment
-│
-├── .gitignore
-├── README.md
-└── stockVedic/               # Python package (if needed)
+Frontend    React 19 + Vite + Recharts
+Backend     FastAPI + Python 3
+Styling     CSS Variables (dark theme)
+Data        yfinance + Screener.in + Finnhub + Fincrux
+Deploy      GitHub Pages + Render
 ```
 
 ---
 
-## Local Development
-
-### Prerequisites
-
-- **Node.js 18+** — for the frontend
-- **Python 3.10+** — for the backend
-
-### Step 1: Clone the Repository
-
-```bash
-git clone https://github.com/theveerakumar/stockvedic.git
-cd stockvedic
-```
-
-### Step 2: Start the Backend
-
-```bash
-cd server
-
-# Create virtual environment (optional but recommended)
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Copy env file and add your API keys
-cp .env.example .env
-# Edit .env with your keys:
-#   FINNHUB_KEY=your_finnhub_key
-#   FINCRUX_KEY=your_fincrux_key
-
-# Start the server
-uvicorn main:app --port 8001 --reload
-```
-
-The backend runs at `http://localhost:8001`
-
-### Step 3: Start the Frontend
-
-```bash
-cd client
-
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-```
-
-The frontend runs at `http://localhost:5173`
-
-### Step 4: Use the App
-
-Open http://localhost:5173 in your browser. Search for any NSE stock (e.g., RELIANCE, TCS, INFY).
-
----
-
-## API Endpoints (Backend)
+## API Endpoints
 
 | Endpoint | Description |
-|----------|-------------|
+|---|---|
 | `GET /api/yf/history/{symbol}?period=1y` | Historical price data |
-| `GET /api/yf/quote/{symbol}` | Current quote, market cap, P/E, etc. |
+| `GET /api/yf/quote/{symbol}` | Current quote, market cap, P/E |
 | `GET /api/yf/fundamentals/{symbol}` | Quarterly results, P&L, ratios |
 | `GET /api/search?q=RELIANCE` | Stock search (Fincrux) |
 | `GET /api/finnhub/earnings/{symbol}` | Earnings surprise (cached) |
@@ -174,122 +83,49 @@ Open http://localhost:5173 in your browser. Search for any NSE stock (e.g., RELI
 
 ---
 
-## Deployment
+## Local Development
 
-### Backend → Render
+```bash
+# Backend
+cd server
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env   # Add FINNHUB_KEY + FINCRUX_KEY
+uvicorn main:app --port 8001 --reload
 
-1. Go to [render.com](https://render.com) → **New +** → **Web Service**
-2. Connect your GitHub account and select the `stockVedic` repo
-3. Configure:
-   - **Root Directory:** `server`
-   - **Build Command:** `pip install -r requirements.txt`
-   - **Start Command:** `uvicorn main:app --host 0.0.0.0 --port $PORT`
-4. Add environment variables:
-   - `FINNHUB_KEY`
-   - `FINCRUX_KEY`
-5. Click **Create Web Service**
+# Frontend (separate terminal)
+cd client
+npm install
+npm run dev
+```
 
-Your backend URL will be something like: `https://stockvedic.onrender.com`
-
-### Frontend → GitHub Pages
-
-1. Go to your repo → **Settings** → **Pages**
-2. Source: **GitHub Actions**
-3. Go to **Settings** → **Secrets and variables** → **Actions**
-4. Add secrets:
-   - `VITE_API_URL` → your Render backend URL (e.g., `https://stockvedic.onrender.com`)
-   - `VITE_FINNHUB_KEY` → your Finnhub API key
-5. Push to `master` — GitHub Actions will auto-deploy
-
-Your frontend URL: `https://theveerakumar.github.io/stockvedic/`
+Frontend at `http://localhost:5173`, backend at `http://localhost:8001`.
 
 ---
 
 ## Environment Variables
 
-### Frontend (client/.env)
+| Variable | Where | Required For |
+|---|---|---|
+| `VITE_API_URL` | client/.env | Backend URL (dev: localhost:8001, prod: stockvedic.onrender.com) |
+| `VITE_FINNHUB_KEY` | client/.env | Earnings, recommendations, news |
+| `FINNHUB_KEY` | server/.env | Earnings, recommendations, news |
+| `FINCRUX_KEY` | server/.env | Stock search |
 
-| Variable | Description |
-|----------|-------------|
-| `VITE_API_URL` | Backend API URL (e.g., https://stockvedic.onrender.com) |
-| `VITE_FINNHUB_KEY` | Finnhub API key for earnings/consensus |
-
-### Backend (server/.env)
-
-| Variable | Description |
-|----------|-------------|
-| `FINNHUB_KEY` | Finnhub API key for earnings, recommendations, news |
-| `FINCRUX_KEY` | Fincrux API key for stock search |
+**Get free keys:** [Finnhub](https://finnhub.io/) (60 req/min) · [Fincrux](https://fincrux.org/) (5 req/day)
 
 ---
 
-## API Keys
+## Deployment
 
-You need to obtain your own API keys:
+**Backend → Render:** Create Web Service → root `server`, build `pip install -r requirements.txt`, start `uvicorn main:app --host 0.0.0.0 --port $PORT`, add env vars.
 
-| Service | Get Key From | Limits |
-|---------|--------------|--------|
-| **Finnhub** | https://finnhub.io/ | 60 requests/min (free) |
-| **Fincrux** | https://fincrux.org/ | 5 requests/day (free) |
-| **Yahoo Finance** | Built into yfinance | Unlimited (no key needed) |
+**Frontend → GitHub Pages:** Push to `main` → GitHub Actions builds and deploys. Set `VITE_API_URL` and `VITE_FINNHUB_KEY` as repo secrets.
+
+> Note: Render free tier spins down after 15 min idle (~30s cold start). Use [cron-job.org](https://cron-job.org) to ping every 10 min to keep it warm.
 
 ---
 
-## Free Tier Limitations
-
-| Service | Limitation |
-|---------|------------|
-| **Render** | 750 hours/month, spins down after 15 min idle (cold start ~30s) |
-| **Fincrux** | 5 search requests/day |
-| **Finnhub** | 60 requests/min (plenty for personal use) |
-
-### Keep Render Awake
-
-Add a free cron job to ping your backend every 10 minutes:
-
-1. Go to https://cron-job.org
-2. Create a job that GETs: `https://stockvedic.onrender.com/api/yf/quote/RELIANCE`
-3. Set to run every 10 minutes
-
----
-
-## Screenshots
-
-The app features a terminal-inspired dark theme with:
-
-- **Header** — Search bar with popular stocks (RELIANCE, TCS, HDFCBANK, etc.)
-- **Main Chart** — Price with SMA, Bollinger Bands, VWAP
-- **Indicator Panels** — RSI (120px), MACD (150px) with tooltips
-- **Signal Banner** — Buy/Hold/Sell with confidence score
-- **Market Sentiment** — Regime, SMAs, RSI, Volume status
-- **Entry Box** — Entry zone, SL, Target, R:R, Position sizing
-- **Indicator Grid** — All indicators with strategy notes
-- **Quarterly Results** — Tabbed view (Quarterly, P&L, Balance Sheet, Cash Flow)
-- **Red Flag Scanner** — Debt/Equity, Promoter holdings warnings
-- **Sidebar** — Company overview, Annual performance, Key levels, Earnings, Analyst consensus
-
----
-
-## License
-
-MIT License — feel free to use, modify, and distribute.
-
----
-
-## Contributing
-
-1. Fork the repo
-2. Create a feature branch (`git checkout -b feature/amazing`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing`)
-5. Open a Pull Request
-
----
-
-## Acknowledgments
-
-- **Yahoo Finance** — via yfinance Python library
-- **Finnhub** — Market data APIs
-- **Fincrux** — Indian stock search
-- **Recharts** — Beautiful React charts
-- **Vite** — Lightning-fast frontend tooling
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&height=100&color=0:F59E0B,100:0A0E17&section=footer" />
+</p>
